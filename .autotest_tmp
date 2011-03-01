@@ -1,0 +1,75 @@
+# ~.autotest
+require 'autotest_notification'
+SPEAKING = false
+DOOM_EDITION = false
+BUUF = true
+PENDING = false
+STICKY = false
+SUCCESS_SOUND = ''
+FAILURE_SOUND = ''
+
+Autotest.add_hook :initialize do |at|
+  at.clear_exceptions()
+  at.clear_mappings()
+
+  at.add_mapping(%r%^lib/.*rb$%, true) {|filename, _|
+    basename = File.basename(filename, '.rb')
+    at.files_matching(%r%^spec/.*#{basename}_spec.rb$%) 
+  }
+
+  at.add_mapping(%r%^lib/migration_validators/spec/support/.*rb$%, true) {|filename, _|
+    basename = File.basename(filename, '.rb')
+    at.files_matching(%r%^spec/migration_validators/spec/support/.*#{basename}_spec.rb$%) 
+  }
+
+#  at.add_mapping(/^lib\/migration_validators\/.*rb$/) {|filename, _|
+#    basename = File.basename(filename, '.rb')
+#    at.files_matching(/^spec\/.*#{basename}_spec.rb$/) 
+#  }
+
+#  at.add_mapping(/^lib\/mv-test.rb$/) {|filename, _|
+      #at.files_matching(/^spec\/.*_spec.rb$/) 
+      #at.files_matching(/^spec\/migration_validators\/spec\/macros\/.*_spec.rb$/) 
+      #at.files_matching(/^spec\/migration_validators\/spec\/matchers\/*_spec.rb$/) 
+#      at.files_matching(/^spec\/migration_validators\/spec\/support\/.*_spec.rb$/) 
+#  }
+#  at.add_mapping(/^lib\/migration_validators\/spec\/macros\/.*rb$/) {|filename, _|
+#      basename = File.basename(filename, '.rb')
+#      at.files_matching(/^spec\/migration_validators\/spec\/macros\/#{basename}_spec.rb$/) 
+#  }
+#
+#  at.add_mapping(/^lib\/migration_validators\/spec\/matchers\/.*rb$/) {|filename, _|
+#      basename = File.basename(filename, '.rb')
+#      at.files_matching(/^spec\/migration_validators\/spec\/matchers\/#{basename}_spec.rb$/) 
+#  }
+#
+#  at.add_mapping(/^lib\/migration_validators\/spec\/support\/.*rb$/) {|filename, _|
+#      basename = File.basename(filename, '.rb')
+#      at.files_matching(/^spec\/migration_validators\/spec\/support\/#{basename}_spec.rb$/) 
+#  }
+#
+#  at.add_mapping(/^spec\/migration_validators\/spec\/macros\/.*rb$/, true) {|filename, _|
+#    filename
+#  }
+#
+#  at.add_mapping(/^spec\/migration_validators\/spec\/matchers\/.*rb$/, true) {|filename, _|
+#    filename
+#  }
+
+#  at.add_mapping(/^spec\/migration_validators\/spec\/support\/.*rb$/, true) {|filename, _|
+ #   filename
+ # }
+
+  at.add_exception %r{^\.git}  # ignore Version Control System
+  at.add_exception %r{^./tmp}  # ignore temp files, lest autotest will run again, and again...
+  at.add_exception(/autotest/)
+  at.add_exception(/document/)
+  at.add_exception(/Gemfile*/)
+  at.add_exception(/gitignore/)
+  at.add_exception(/LICENSE/)
+  at.add_exception(/Rakefile/)
+  at.add_exception(/README/)
+  at.add_exception(/rspec/)
+  at.add_exception(/spec\/support/)
+  nil
+end
