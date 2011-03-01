@@ -12,7 +12,7 @@ module MigrationValidators
         end
 
         def db
-          ActiveRecord::Base.connection 
+          ::ActiveRecord::Base.connection 
         end
 
         def migrate &block

@@ -12,8 +12,8 @@ require 'rake'
 require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "mv-core"
-  gem.homepage = "http://github.com/vprokochuk256/mv-core"
+  gem.name = "mv-test"
+  gem.homepage = "http://github.com/vprokochuk256/mv-test"
   gem.license = "MIT"
   gem.summary = "Migration Validators project test suite"
   gem.description = "Contains macros / matchers for database behavious testing"
