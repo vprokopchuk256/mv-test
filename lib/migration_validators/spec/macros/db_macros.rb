@@ -66,7 +66,7 @@ module MigrationValidators
           def with_validator validator_name, opts = true, &block
             describe "validated for #{validator_name}" do
               before :all do
-                raise "'for_validator' must be called in column context only" unless @column_wrapper.kind_of?(MigratioValidators::Spec::Support::ColumnWrapper)
+                raise "'for_validator' must be called in column context only" unless @column_wrapper.kind_of?(MigrationValidators::Spec::Support::ColumnWrapper)
 
                 @validator_name = validator_name
                 @column_options.merge!(:validates => {validator_name => opts})
