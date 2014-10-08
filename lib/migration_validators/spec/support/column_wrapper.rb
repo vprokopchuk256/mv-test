@@ -19,17 +19,17 @@ module MigrationValidators
 
         def update *values
           @last_exception = nil
-          to_array(values).each{|value| execute(value, "UPDATE #{@table_wrapper.table_name} SET #{column_name} = #{value}")}
+          ColumnWrapper.to_array(values).each{|value| execute(value, "UPDATE #{@table_wrapper.table_name} SET #{column_name} = #{value}")}
           self
         end
 
         def insert *values
           @last_exception = nil
-          to_array(values).each {|value| execute(value, "INSERT INTO #{@table_wrapper.table_name}(#{column_name}) VALUES(#{value})")}
+          ColumnWrapper.to_array(values).each {|value| execute(value, "INSERT INTO #{@table_wrapper.table_name}(#{column_name}) VALUES(#{value})")}
           self
         end
 
-        def to_array values
+        def self.to_array values
           values.collect do |value|
             case value.class.name
               when "Range" then to_array(value.to_a)
@@ -46,7 +46,7 @@ module MigrationValidators
 
         private 
 
-        def quote value
+        def self.quote value
           value = "'#{value}" unless value.starts_with?("'")
           value = "#{value}'" unless value.ends_with?("'")
           value

@@ -1,20 +1,31 @@
 require File.expand_path(File.dirname(__FILE__) + '/../../../spec_helper')
 
 describe MigrationValidators::Spec::Support::TableWrapper, "supports", :type => :mv_test do
-  before :each do
+  before :example do
     use_memory_db
-
-    db.drop_table(:test_table) if db.table_exists?(:test_table)
-    @wrapper = new_table {|t| t.string :str_column }
   end
 
-  it "column information requests" do
-    @wrapper.str_column.column_name.should == :str_column
+  before { db.create_table(:table_name) {|tbl| tbl.string :column} }
+  after { db.drop_table(:table_name) if db.table_exists?(:table_name) }
+
+  subject(:tbl){ described_class.new(:table_name, db) }
+
+  describe '#initialize' do
+    its(:table_name) { is_expected.to eq(:table_name) }
   end
 
-  it "supports dropping" do
-    @wrapper.drop
+  describe '#drop' do
+    before{ tbl.drop }
 
-    db.table_exists?(:test_table).should be_false
+    subject{ db.table_exists?(:table_name) }
+
+    it { is_expected.to eq(false) }
+  end
+
+  describe 'access column by name' do
+    subject{ tbl.column }
+
+    it { is_expected.to be_present }
+    its(:column_name) { is_expected.to eq(:column) }
   end
 end

@@ -1,148 +1,189 @@
 require File.expand_path(File.dirname(__FILE__) + '/../../../spec_helper')
 
 describe MigrationValidators::Spec::Support::ColumnWrapper, "supports", :type => :mv_test do
-  before :each do
-    use_memory_db
+  Item = Class.new(ActiveRecord::Base)
 
-    db.drop_table(:test_table) if db.table_exists?(:test_table)
-    @wrapper = new_table {|t| t.string :str_column }.str_column
-  end
-
-  it "drop" do
-    chg_table(:test_table) {|t| t.string :str_column_1}.str_column_1.drop
-
-    db.column_exists?(:test_table, :str_column_1).should be_false
-  end
-
-  describe "sql wrapping for" do
-    before :each do
-      db.drop_table(:items) if db.table_exists?(:items)
-
-      Item = Class.new(ActiveRecord::Base) do
-        def self.all
-          Item.find(:all, :order => "column ASC").collect{|item| item.column}
-        end
-      end
-    end
-
-    describe :insert do
-      describe "range" do
-        it "open" do
-          new_table(:items){|t| t.integer :column}.column.insert(1..3)
-          Item.all.should == [1, 2, 3]
-        end
-
-        it "closed" do
-          new_table(:items){|t| t.integer :column}.column.insert(1...3)
-          Item.all.should == [1, 2]
-        end
-      end
-
-      describe "array" do
-        before :each do
-          @column = new_table(:items){|t| t.integer :column}.column
-        end
-
-        it "of simple elements" do
-          @column.insert([1, 2, 3])
-          Item.all.should == [1, 2, 3]
-        end
-
-        it "as params list" do
-          @column.insert(1, 2, 3)
-          Item.all.should == [1, 2, 3]
-        end
-
-        it "as composite elements" do
-          @column.insert(1, 2, 3, [4, 5], 6..8)
-          Item.all.should == [1, 2, 3, 4, 5, 6, 7, 8]
-        end
-      end
-
-      describe "string" do
-        before :each do
-          @column = new_table(:items){|t| t.string :column}.column
-        end
-
-        it "parameters"  do
-          @column.insert("str1", "str2")
-          Item.all.should == ["str1", "str2"]
-        end
-
-        it "interprets NULL correctly" do
-          @column.insert("NULL")
-
-          Item.all.should == [nil]
-        end
-
-        it "supports internal arrays" do
-          @column.insert(["str1", ["str2"]])
-          Item.all.should == ["str1", "str2"]
-        end
-      end
-
-      it "date" do
-        column = new_table(:items){|t| t.date :column}.column
-        date = Date.today
-
-        column.insert(date)
-        Item.all.should == [date]
-      end
-
-      it "time" do
-        column = new_table(:items){|t| t.time :column}.column
-        time = Time.now
-
-        column.insert(time)
-        Item.all.first.strftime("%H:%M:%S").should == time.strftime("%H:%M:%S")
-      end
-      it "datetime" do
-        column = new_table(:items){|t| t.datetime :column}.column
-        datetime = DateTime.now
-
-        column.insert(datetime)
-        Item.all.first.strftime("%y-%m-%d %H:%M:%S").should == datetime.strftime("%y-%m-%d %H:%M:%S")
-      end
-
-      it "nil" do
-        column = new_table(:items){|t| t.string :column}.column
-        column.insert(nil)
-
-        Item.all.should == [nil]
-      end
-    end
-
-    it :update do
-      new_table(:items){|t| t.integer :column}.column.insert(1..3).update(3)
-      Item.all.should == [3, 3, 3]
+  before :example do 
+    use_memory_db 
+    new_table(:items) do |t| 
+      t.column :string_column, :string 
+      t.column :integer_column, :integer 
+      t.column :date_column, :date 
+      t.column :time_column, :time 
+      t.column :datetime_column, :datetime
     end
   end
 
-  describe "last exception" do
-    it "equals nil if operation successed" do
-      column = new_table(:items){|t| t.string :column}.column
-      column.insert("value")
+  after :example do 
+    db.drop_table(:items)
+  end
 
-      column.last_exception.should be_blank
+  after do
+    db.execute('DELETE FROM items')
+  end
+
+  let(:items_table) { table(:items) }
+
+  describe '#initialize' do
+    subject{ described_class.new(:string_column, items_table, db) }
+
+    its(:column_name) { is_expected.to eq(:string_column) }
+    its(:last_exception) { is_expected.to be_nil }
+  end
+
+  describe '#drop' do
+    before { items_table.string_column.drop }
+
+    subject{ db.column_exists?(:items, :string_column) }
+
+    it { should eq(false) }
+
+    after { chg_table(:items){|tbl| tbl.string :string_column} }
+  end
+
+  describe '#insert' do
+    before do
+      column.insert(params)
     end
 
-    it "equals last exception if something wrong" do
-      column = new_table(:items){|t| t.string :column}.column
-      db.drop_table(:items)
-      column.insert("value")
+    context 'collection passed as' do
+      let(:column) { items_table.integer_column }
+      subject{ Item.all.collect(&:integer_column) }
 
-      column.last_exception.should_not be_blank
+      context 'open range' do
+        let(:params) { 1..3 }
+        
+        it { is_expected.to match_array([1, 2, 3]) }
+      end
+
+      context 'closed range' do
+        let(:params) { 1...3 }
+        
+        it { is_expected.to match_array([1, 2]) }
+      end
+
+      context 'flat array' do
+        let(:params) { [1, 2, 3] }
+        
+        it { is_expected.to match_array([1, 2, 3]) }
+      end
+
+      context 'array with inner collections' do
+        let(:params) { [1, 2, 3, [4, 5], 6..8] }
+        
+        it { is_expected.to match_array([1, 2, 3, 4, 5, 6, 7, 8]) }
+      end
     end
 
-    it "clears before each new request" do
-      column = new_table(:items){|t| t.string :column}.column
-      db.drop_table(:items)
-      column.insert("value")
+    context 'inserted single value' do
+      let(:column) { |example| items_table.send(:"#{example.metadata[:described_class]}_column") }
+      let(:params) { |example| example.metadata[:value_to_insert] }
+      let(:value_to_insert) { params }
+      subject{ |example| Item.first.send(:"#{example.metadata[:described_class]}_column") }
 
-      new_table(:items){|t| t.string :column}
-      column.insert("value")
+      context :string, value_to_insert: 'str' do
+        it { is_expected.to eq("str") } 
+      end
 
-      column.last_exception.should be_blank
+      context :string, value_to_insert: 'NULL' do
+        it { is_expected.to be_nil } 
+      end
+
+      context :date, value_to_insert: Date.today do
+        it { is_expected.to eq(Date.today) } 
+      end
+
+      context :time, value_to_insert: Time.now do
+        its(:hour) { is_expected.to eq(value_to_insert.hour) } 
+        its(:min) { is_expected.to eq(value_to_insert.min) } 
+        its(:sec) { is_expected.to eq(value_to_insert.sec) } 
+      end
+
+      context :datetime, value_to_insert: DateTime.now do
+        its(:year) { is_expected.to eq(value_to_insert.year) } 
+        its(:mon) { is_expected.to eq(value_to_insert.mon) } 
+        its(:day) { is_expected.to eq(value_to_insert.day) } 
+        its(:hour) { is_expected.to eq(value_to_insert.hour) } 
+        its(:min) { is_expected.to eq(value_to_insert.min) } 
+        its(:sec) { is_expected.to eq(value_to_insert.sec) } 
+      end
+    end
+  end
+
+  describe '#update' do
+    let(:column_name) { |example| :"#{example.metadata[:described_class]}_column" }
+    let(:column) { |example| items_table.send(column_name) }
+    let(:new_value) { |example| example.metadata[:new_value] }
+
+    before do |example| 
+      column.insert(example.metadata[:old_value]) 
+      column.update(example.metadata[:new_value])
+    end
+
+    subject{ |example| Item.first.send(column_name) }
+    
+    context :string, old_value: 'old_str', new_value: 'new_str' do
+      it { is_expected.to eq(new_value) } 
+    end
+
+    context :string, old_value: 'old_str', new_value: 'NULL' do
+      it { is_expected.to be_nil } 
+    end
+
+    context :date, old_value: Date.yesterday, new_value: Date.today do
+      it { is_expected.to eq(new_value) } 
+    end
+
+    context :time, old_value: Time.now - 1, new_value: Time.now do
+      its(:hour) { is_expected.to eq(new_value.hour) } 
+      its(:min) { is_expected.to eq(new_value.min) } 
+      its(:sec) { is_expected.to eq(new_value.sec) } 
+    end
+
+    context :datetime, old_value: Time.now - 1000, new_value: DateTime.now do
+      its(:year) { is_expected.to eq(new_value.year) } 
+      its(:mon) { is_expected.to eq(new_value.mon) } 
+      its(:day) { is_expected.to eq(new_value.day) } 
+      its(:hour) { is_expected.to eq(new_value.hour) } 
+      its(:min) { is_expected.to eq(new_value.min) } 
+      its(:sec) { is_expected.to eq(new_value.sec) } 
+    end
+  end
+
+  describe '#to_array for array that contains' do
+    let(:value) { |example| example.metadata[:value] }
+    subject{ MigrationValidators::Spec::Support::ColumnWrapper.to_array([value]) }
+
+    context Array, value: [1, 2, 3] do
+      it { is_expected.to match_array([1, 2, 3]) }
+    end
+
+    context Range, value: 1..3 do
+      it { is_expected.to match_array([1, 2, 3]) }
+    end
+
+    context Integer, value: 1 do
+      it { is_expected.to eq([1]) }
+    end
+
+    context String, value: 'str' do
+      it { is_expected.to eq(["'str'"]) }
+    end
+
+    context Date, value: Date.today do
+      it { is_expected.to eq(["'#{value.strftime('%Y-%m-%d')}'"]) }
+    end
+
+    context Time, value: Time.now do
+      it { is_expected.to eq(["'#{value.strftime('%Y-%m-%d %H:%M:%S')}'"]) }
+    end
+
+    context DateTime, value: DateTime.now do
+      it { is_expected.to eq(["'#{value.strftime('%Y-%m-%d %H:%M:%S')}'"]) }
+    end
+
+    context NilClass, value: nil do
+      it { is_expected.to eq(["NULL"]) }
     end
   end
 end

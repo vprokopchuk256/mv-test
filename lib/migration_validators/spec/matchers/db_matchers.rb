@@ -103,7 +103,7 @@ module MigrationValidators
           def matches? column_wrapper
             column_wrapper.insert(@initial) if @initial
             
-            column_wrapper.to_array(values).each do |value|
+            MigrationValidators::Spec::Support::ColumnWrapper.to_array(values).each do |value|
               passed = true
 
               if insert?
@@ -154,6 +154,12 @@ module MigrationValidators
             super && exception && exception.message =~ /#{message}/
           end
 
+          def description
+            compose_message do |operations_name, elements_name, last_message, expected_message|
+             "expected that operation #{operations_name} would fail for #{elements_name} from #{values} #{expected_message}"
+            end
+          end
+
 
           def failure_message
             compose_message do |operations_name, elements_name, last_message, expected_message|
@@ -161,7 +167,7 @@ module MigrationValidators
             end
           end
 
-          def negative_failure_message
+          def failure_message_when_negated
             compose_message do |operations_name, elements_name, last_message, expected_message|
              "not expected that operation #{operations_name} would fail for #{elements_name} from #{values} #{expected_message}. But it happened with #{last_operation} on '#{last_value}'"
             end
@@ -174,6 +180,11 @@ module MigrationValidators
             super && exception.blank?
           end
 
+          def description
+            compose_message do |operations_name, elements_name, last_message, expected_message|
+             "expected that operation #{operations_name} would success for #{elements_name} from #{values}"
+            end
+          end
 
           def failure_message
             compose_message do |operations_name, elements_name, last_message, expected_message|
@@ -181,7 +192,7 @@ module MigrationValidators
             end
           end
 
-          def negative_failure_message
+          def failure_message_when_negated
             compose_message do |operations_name, elements_name, last_message, expected_message|
              "not expected that operation #{operations_name} would success for #{elements_name} from #{values}. But it happened with #{last_operation} on '#{last_value}'"
             end

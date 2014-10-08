@@ -1,12 +1,11 @@
 source "http://rubygems.org"
 
-gem "activerecord", ">= 2.3.5"
-gem "rspec", "~> 2.3.0"
+gem 'activerecord', '>= 4.1.6'
+gem 'rspec', '>= 3.1.0'
+gem 'rspec-its', '>= 1.0.1'
 
 group :development do
-  gem "bundler", "~> 1.0.0"
-  gem "jeweler", "~> 1.5.2"
-  gem "rcov", ">= 0"
+  gem 'jeweler', '>= 2.0.1'
 end
 
 group :test do
