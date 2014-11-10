@@ -31,7 +31,7 @@ describe MigrationValidators::Spec::Matchers::DBMatchers, "supports", :type => :
   describe :deny do
     it { is_expected.to deny.at_least_one(1, 1).with_initial(1, 2) }
     it { is_expected.to deny.at_least_one.insert(1, 1) }
-    it { is_expected.to deny.at_least_one.insert(1, 1).with_message(/UNIQUE constraint failed/) }
-    it { is_expected.to deny.insert(1, 1).with_initial(1).with_message(/UNIQUE constraint failed/) }
+    it { is_expected.to deny.at_least_one.insert(1, 1).with_message(/is not unique/) }
+    it { is_expected.to deny.insert(1, 1).with_initial(1).with_message(/is not unique/) }
   end
 end
